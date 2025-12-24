@@ -1,0 +1,20 @@
+version: "3"
+
+services:
+    n8n:
+        image: n8nio/n8n
+        restart: unless-stopped
+        ports:
+            - "5678:5678"
+        environment:
+            - N8N_BASIC_AUTH_ACTIVE=true
+            - N8N_BASIC_AUTH_USER=${BASIC_AUTH_USER}
+            - N8N_BASIC_AUTH_PASSWORD=${BASIC_AUTH_PASSWORD}
+            - N8N_HOST=localhost
+            - N8N_PORT=5678
+            - N8N_PROTOCOL=http
+            - N8N_WEBHOOK_URL=${NGROK_URL}
+        volumes:
+            - ./n8n_data:/home/node/.n8n
+            - /Users/edwinchien/coding/docker/n8n-docker/n8n_files:/data
+            - /Users/edwinchien/coding/docker/n8n-docker/n8n_input:/input

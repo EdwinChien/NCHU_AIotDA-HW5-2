@@ -1,0 +1,72 @@
+{
+  "name": "Webhook_HF_Summarizer_v2_2025",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook-note",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://router.huggingface.co/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer XXXXXXXXXXX"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"meta-llama/Llama-3.2-1B-Instruct\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"你是一個專業的筆記整理助手，請使用繁體中文進行摘要。\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"請將以下內容整理成簡潔的中文筆記：{{ $json.body.content.replace(/[\\n\\r\"]/g, ' ') }}\"\n    }\n  ],\n  \"max_tokens\": 500,\n  \"stream\": false\n}",
+        "options": {}
+      },
+      "id": "2",
+      "name": "HF Router Summarizer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [350, 300]
+    },
+    {
+      "parameters": {
+        "mode": "textToBinary",
+        "sourceKey": "={{ $json.choices[0].message.content }}",
+        "destinationKey": "data"
+      },
+      "id": "3",
+      "name": "Convert to File",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1,
+      "position": [580, 300]
+    },
+    {
+      "parameters": {
+        "fileName": "={{ 'note_' + $now.format('YYYYMMDD_HHmmss') + '.txt' }}",
+        "options": {
+          "append": false
+        }
+      },
+      "id": "4",
+      "name": "Save Note",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [800, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": { "main": [[ { "node": "HF Router Summarizer", "type": "main", "index": 0 } ]] },
+    "HF Router Summarizer": { "main": [[ { "node": "Convert to File", "type": "main", "index": 0 } ]] },
+    "Convert to File": { "main": [[ { "node": "Save Note", "type": "main", "index": 0 } ]] }
+  }
+}
